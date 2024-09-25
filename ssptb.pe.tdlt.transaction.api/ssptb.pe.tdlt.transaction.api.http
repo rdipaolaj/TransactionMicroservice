@@ -1,0 +1,6 @@
+@ssptb.pe.tdlt.transaction.api_HostAddress = http://localhost:5188
+
+GET {{ssptb.pe.tdlt.transaction.api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Http" Version="8.1.0" />
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
+    <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="8.0.1" />
+    <PackageReference Include="Mapster.DependencyInjection" Version="1.0.1" />
+    <PackageReference Include="MediatR" Version="12.4.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ssptb.pe.tdlt.transaction.command\ssptb.pe.tdlt.transaction.command.csproj" />
+    <ProjectReference Include="..\ssptb.pe.tdlt.transaction.data\ssptb.pe.tdlt.transaction.data.csproj" />
+    <ProjectReference Include="..\ssptb.pe.tdlt.transaction.dto\ssptb.pe.tdlt.transaction.dto.csproj" />
+    <ProjectReference Include="..\ssptb.pe.tdlt.transaction.infraestructure\ssptb.pe.tdlt.transaction.infraestructure.csproj" />
+  </ItemGroup>
+
+</Project>
