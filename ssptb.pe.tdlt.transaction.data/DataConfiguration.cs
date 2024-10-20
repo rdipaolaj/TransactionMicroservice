@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using ssptb.pe.tdlt.transaction.common.Settings;
+using ssptb.pe.tdlt.transaction.data.Helpers;
 using ssptb.pe.tdlt.transaction.data.Repositories;
 
 namespace ssptb.pe.tdlt.transaction.data;
@@ -36,7 +37,8 @@ public static class DataConfiguration
 
     public static IServiceCollection AddDataServicesConfiguration(this IServiceCollection services)
     {
-        services.AddScoped<ITransactionRepository, TransactionRepository>();
+        services.AddTransient<ICouchbaseHelper, CouchbaseHelper>();
+        services.AddTransient<ITransactionRepository, TransactionRepository>();
 
         return services;
     }

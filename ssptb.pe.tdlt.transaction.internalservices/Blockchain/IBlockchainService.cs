@@ -5,7 +5,7 @@ using ssptb.pe.tdlt.transaction.entities;
 namespace ssptb.pe.tdlt.transaction.internalservices.Blockchain;
 public interface IBlockchainService
 {
-    Task<ApiResponse<bool>> RegisterTransactionAsync(Transaction transaction);
+    Task<ApiResponse<RegisterTransactionDto>> RegisterTransactionAsync(Transaction transaction);
     Task<ApiResponse<NodeInfoDto>> GetNodeInfoAsync();
     // Otros métodos si los necesitas...
 }
