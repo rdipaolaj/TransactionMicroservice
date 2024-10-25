@@ -32,7 +32,7 @@ public class GetAllTransactionsQueryHandler : IRequestHandler<GetAllTransactions
             var dto = new TransactionAllResponseDto
             {
                 Id = transaction.Id,
-                BankTransactionId = transaction.BankTransactionId,
+                UserBankTransactionId = transaction.UserBankTransactionId,
                 TransactionDate = transaction.TransactionDate,
                 Status = transaction.Status,
                 BlockId = transaction.BlockId,

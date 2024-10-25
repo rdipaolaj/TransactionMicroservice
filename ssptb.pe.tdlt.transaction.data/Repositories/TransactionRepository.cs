@@ -92,7 +92,7 @@ public class TransactionRepository : ITransactionRepository
                 transaction.Id = parsedGuid;
 
                 // Asignar propiedades de la transacción
-                transaction.BankTransactionId = row["bankTransactionId"]?.ToString() ?? string.Empty;
+                transaction.UserBankTransactionId = row["userBankTransactionId"]?.ToString() ?? string.Empty;
                 transaction.Tag = row["tag"]?.ToString() ?? string.Empty;
                 transaction.TransactionDate = ParseDate(row["transactionDate"]);
                 transaction.Status = ParseEnum<TransactionStatus>(row["status"], TransactionStatus.Pending);

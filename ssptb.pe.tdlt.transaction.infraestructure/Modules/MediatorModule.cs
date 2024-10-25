@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 using ssptb.pe.tdlt.transaction.commandhandler.Transaction;
+using ssptb.pe.tdlt.transaction.commandvalidator.Transaction;
 using ssptb.pe.tdlt.transaction.infraestructure.Behaviors;
 using ssptb.pe.tdlt.transaction.internalservices;
 using ssptb.pe.tdlt.transaction.redis;
@@ -18,7 +20,7 @@ public static class MediatorModule
             configuration.AddOpenBehavior(typeof(ValidatorBehavior<,>));
         });
 
-        //services.AddValidatorsFromAssembly(typeof(AffiliateCommandValidator).Assembly);
+        services.AddValidatorsFromAssembly(typeof(CreateTransactionCommandValidator).Assembly);
 
         return services;
     }

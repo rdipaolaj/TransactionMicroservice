@@ -13,10 +13,10 @@ public static class MapsterConfiguration
 
         config.NewConfig<TransactionRequestDto, entities.Transaction>()
             .Map(dest => dest.Tag, src => src.Tag)
-            .Map(dest => dest.BankTransactionId, src => src.BankTransactionId)
+            .Map(dest => dest.UserBankTransactionId, src => src.UserBankTransactionId)
             .Map(dest => dest.TransactionData, src => src.TransactionData)
             .Map(dest => dest.TransactionDataSave, src => src.TransactionData.GetRawText())
-            .Map(dest => dest.TransactionDate, src => src.TransactionDate)
+            .Map(dest => dest.TransactionDate, src => DateTime.UtcNow)
             .Map(dest => dest.Status, src => TransactionStatus.SentToBlockchain);
 
         config.NewConfig<NodeInfoDto, NodeStatusDto>()

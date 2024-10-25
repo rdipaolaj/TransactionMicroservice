@@ -15,8 +15,4 @@
     <ProjectReference Include="..\ssptb.pe.tdlt.transaction.common\ssptb.pe.tdlt.transaction.common.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Transaction\" />
-  </ItemGroup>
-
 </Project>

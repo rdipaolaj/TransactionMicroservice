@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ssptb.pe.tdlt.transaction.commandhandler\ssptb.pe.tdlt.transaction.commandhandler.csproj" />
+    <ProjectReference Include="..\ssptb.pe.tdlt.transaction.commandvalidator\ssptb.pe.tdlt.transaction.commandvalidator.csproj" />
     <ProjectReference Include="..\ssptb.pe.tdlt.transaction.common\ssptb.pe.tdlt.transaction.common.csproj" />
     <ProjectReference Include="..\ssptb.pe.tdlt.transaction.internalservices\ssptb.pe.tdlt.transaction.internalservices.csproj" />
     <ProjectReference Include="..\ssptb.pe.tdlt.transaction.redis\ssptb.pe.tdlt.transaction.redis.csproj" />

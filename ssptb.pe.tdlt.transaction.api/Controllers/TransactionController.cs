@@ -50,6 +50,15 @@ public class TransactionController : CustomController
     }
 
     [HttpGet]
+    [Route("{id}/{roleId}")]
+    public async Task<IActionResult> GetTransactionsByIdAndRoleId(Guid id, Guid roleId)
+    {
+        var query = new GetTransactionsByIdAndRoleIdQuery(id, roleId);
+        var result = await _mediator.Send(query);
+        return OkorBadRequestValidationApiResponse(result);
+    }
+
+    [HttpGet]
     [Route("all")]
     public async Task<IActionResult> GetAllTransactions()
     {

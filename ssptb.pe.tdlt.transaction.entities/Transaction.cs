@@ -5,7 +5,7 @@ namespace ssptb.pe.tdlt.transaction.entities;
 public class Transaction
 {
     public Guid Id { get; set; }
-    public string BankTransactionId { get; set; } = string.Empty;
+    public string UserBankTransactionId { get; set; } = string.Empty;
     public string Tag { get; set; } = string.Empty;
 
     public JsonElement? TransactionData { get; set; } = null;

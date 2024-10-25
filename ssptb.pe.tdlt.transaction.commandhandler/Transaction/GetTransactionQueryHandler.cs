@@ -33,7 +33,7 @@ public class GetTransactionQueryHandler : IRequestHandler<GetTransactionQuery, A
         var responseDto = new TransactionIdResponseDto
         {
             Id = transactionResponse.Data.Id,
-            BankTransactionId = transactionResponse.Data.BankTransactionId,
+            UserBankTransactionId = transactionResponse.Data.UserBankTransactionId,
             TransactionDate = transactionResponse.Data.TransactionDate,
             Status = transactionResponse.Data.Status,
             BlockId = transactionResponse.Data.BlockId,
