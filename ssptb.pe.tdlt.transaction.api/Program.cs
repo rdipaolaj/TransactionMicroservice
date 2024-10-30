@@ -32,6 +32,8 @@ builder.Services.AddDataServicesConfiguration();
 
 var app = builder.Build();
 
+app.Services.InitializeMongoDatabase();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -41,7 +43,7 @@ if (app.Environment.IsDevelopment())
 
 app.AddSecurityHeaders();
 app.UseCors("CorsPolicy");
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
 app.UseAuthorization();
 app.UseExceptionHandler();

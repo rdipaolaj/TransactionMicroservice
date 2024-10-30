@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 using ssptb.pe.tdlt.transaction.common.Settings;
 using ssptb.pe.tdlt.transaction.data.Helpers;
 using ssptb.pe.tdlt.transaction.data.Repositories;
@@ -11,35 +12,35 @@ public static class DataConfiguration
 {
     public static IServiceCollection AddDatabaseConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
-        // Configura la cadena de conexión obtenida de los secretos de AWS o directamente de la configuración
         var serviceProvider = services.BuildServiceProvider();
-        var couchBaseSettings = serviceProvider.GetService<IOptions<CouchBaseSettings>>()?.Value;
+        var mongoDbSettings = serviceProvider.GetService<IOptions<MongoDbSettings>>()?.Value;
 
-        if (couchBaseSettings == null)
+        if (mongoDbSettings == null)
         {
-            throw new InvalidOperationException("CouchBaseSettings not configured properly.");
+            throw new InvalidOperationException("MongoDBSettings not configured properly.");
         }
 
-        // Configurar Couchbase
-        services.AddCouchbase(options =>
-        {
-            options.ConnectionString = couchBaseSettings.ConnectionString;
-            options.UserName = couchBaseSettings.UserName;
-            options.Password = couchBaseSettings.Password;
-            options.ApplyProfile("wan-development");
-        });
+        // Configurar MongoDB
+        services.AddSingleton<IMongoClient, MongoClient>(sp =>
+            new MongoClient(mongoDbSettings.ConnectionString));
+        services.AddScoped(sp => sp.GetRequiredService<IMongoClient>().GetDatabase("Transaction"));
 
-        // Registrar el bucket
-        services.AddCouchbaseBucket<INamedBucketProvider>(couchBaseSettings.BucketName);
+        services.AddSingleton<MongoDBInitializer>();
 
         return services;
     }
 
     public static IServiceCollection AddDataServicesConfiguration(this IServiceCollection services)
     {
-        services.AddTransient<ICouchbaseHelper, CouchbaseHelper>();
+        services.AddTransient<IMongoDBHelper, MongoDBHelper>();
         services.AddTransient<ITransactionRepository, TransactionRepository>();
 
         return services;
+    }
+
+    public static void InitializeMongoDatabase(this IServiceProvider services)
+    {
+        var mongoInitializer = services.GetRequiredService<MongoDBInitializer>();
+        mongoInitializer.InitializeDatabase();
     }
 }

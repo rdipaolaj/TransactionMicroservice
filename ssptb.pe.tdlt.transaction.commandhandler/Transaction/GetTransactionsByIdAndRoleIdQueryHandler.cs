@@ -17,9 +17,9 @@ public class GetTransactionsByIdAndRoleIdQueryHandler : IRequestHandler<GetTrans
     private readonly IUserDataService _userDataService;
 
     // Lista de roles permitidos
-    private readonly Guid _adminRoleId = Guid.Parse("b0069c1d-f7f7-408d-b32f-155d80bab376");
-    private readonly Guid _companyRoleId = Guid.Parse("25f5393f-62ff-4f4a-95e7-656233239abd");
-    private readonly Guid _userRoleId = Guid.Parse("edd62b2f-5976-4498-b4e6-c870b4e96b2a");
+    private readonly Guid _adminRoleId = Guid.Parse("c84b6988-ab74-4a23-81cb-f6aa889ca3d0");
+    private readonly Guid _companyRoleId = Guid.Parse("321ffdf4-4941-4c3b-8188-92fd068e7fba");
+    private readonly Guid _userRoleId = Guid.Parse("2231b31f-10e5-461e-9b12-0b8d58255216");
 
 
     public GetTransactionsByIdAndRoleIdQueryHandler(ILogger<GetTransactionsByIdAndRoleIdQueryHandler> logger, ITransactionRepository transactionRepository, IUserDataService userDataService)

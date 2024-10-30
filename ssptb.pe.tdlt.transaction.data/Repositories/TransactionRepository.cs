@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 using Newtonsoft.Json.Linq;
 using ssptb.pe.tdlt.transaction.common.Responses;
 using ssptb.pe.tdlt.transaction.data.Helpers;
@@ -9,12 +10,12 @@ using System.Text.Json;
 namespace ssptb.pe.tdlt.transaction.data.Repositories;
 public class TransactionRepository : ITransactionRepository
 {
-    private readonly ICouchbaseHelper _couchbaseHelper;
+    private readonly IMongoDBHelper _mongoDBHelper;
     private readonly ILogger<TransactionRepository> _logger;
 
-    public TransactionRepository(ICouchbaseHelper couchbaseHelper, ILogger<TransactionRepository> logger)
+    public TransactionRepository(IMongoDBHelper mongoDBHelper, ILogger<TransactionRepository> logger)
     {
-        _couchbaseHelper = couchbaseHelper;
+        _mongoDBHelper = mongoDBHelper;
         _logger = logger;
     }
 
@@ -22,21 +23,24 @@ public class TransactionRepository : ITransactionRepository
     {
         try
         {
-            // Usa CouchbaseHelper para obtener la collection
-            var collection = await _couchbaseHelper.GetCollectionAsync("transaction_app", "transaction_data");
+            // Usa MongoDBHelper para obtener la colección
+            var collection = _mongoDBHelper.GetCollection<Transaction>("transaction_data");
 
             // Asigna la versión de esquema actual al documento
             transaction.SchemaVersion = 1;
 
-            // Inserta o actualiza los metadatos en la collection
-            await collection.UpsertAsync(transaction.Id.ToString(), transaction);
+            // Inserta o actualiza el documento en la colección
+            var filter = Builders<Transaction>.Filter.Eq(t => t.Id, transaction.Id);
+            var options = new ReplaceOptions { IsUpsert = true };
+            await collection.ReplaceOneAsync(filter, transaction, options);
+
             _logger.LogInformation($"Transaction {transaction.Id} saved successfully.");
 
             return ApiResponseHelper.CreateSuccessResponse(true, "Transaction saved successfully.");
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error saving transaction to Couchbase: {ex.Message}");
+            _logger.LogError($"Error saving transaction to MongoDB: {ex.Message}");
             return ApiResponseHelper.CreateErrorResponse<bool>($"Failed to save transaction: {ex.Message}", 500);
         }
     }
@@ -45,22 +49,27 @@ public class TransactionRepository : ITransactionRepository
     {
         try
         {
-            var collection = await _couchbaseHelper.GetCollectionAsync("transaction_app", "transaction_data");
-            var result = await collection.GetAsync(id.ToString());
-            var transaction = result.ContentAs<Transaction>();
+            var collection = _mongoDBHelper.GetCollection<Transaction>("transaction_data");
+            var filter = Builders<Transaction>.Filter.Eq(t => t.Id, id);
+            var result = await collection.Find(filter).FirstOrDefaultAsync();
 
-            if (!string.IsNullOrEmpty(transaction.TransactionDataSave))
+            if (result == null)
             {
-                transaction.TransactionData = JsonDocument.Parse(transaction.TransactionDataSave).RootElement;
+                return ApiResponseHelper.CreateErrorResponse<Transaction>("Transaction not found.", 404);
             }
 
-            _logger.LogInformation($"Transaction with ID {id} retrieved from Couchbase.");
+            if (!string.IsNullOrEmpty(result.TransactionDataSave))
+            {
+                result.TransactionData = JsonDocument.Parse(result.TransactionDataSave).RootElement;
+            }
 
-            return ApiResponseHelper.CreateSuccessResponse(transaction, "Transaction retrieved successfully.");
+            _logger.LogInformation($"Transaction with ID {id} retrieved from MongoDB.");
+
+            return ApiResponseHelper.CreateSuccessResponse(result, "Transaction retrieved successfully.");
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving transaction data from Couchbase: {ex.Message}");
+            _logger.LogError($"Error retrieving transaction data from MongoDB: {ex.Message}");
             return ApiResponseHelper.CreateErrorResponse<Transaction>($"Failed to retrieve transaction data: {ex.Message}", 500);
         }
     }
@@ -69,47 +78,23 @@ public class TransactionRepository : ITransactionRepository
     {
         try
         {
-            // Definir la consulta N1QL para obtener todas las transacciones
-            var query = "SELECT t.* FROM `travel-sample`.`transaction_app`.`transaction_data` AS t " +
-                    "WHERE t.schemaVersion = 1";
-
-            // Obtener el cluster usando CouchbaseHelper
-            var cluster = await _couchbaseHelper.GetClusterAsync();
-            var result = await cluster.QueryAsync<JObject>(query); // Utilizamos JObject para un manejo explícito de JSON
+            var collection = _mongoDBHelper.GetCollection<Transaction>("transaction_data");
+            var filter = Builders<Transaction>.Filter.Eq(t => t.SchemaVersion, 1);
+            var result = await collection.Find(filter).ToListAsync();
 
             var transactions = new List<Transaction>();
 
-            await foreach (var row in result.Rows)
+            foreach (var transaction in result)
             {
-                var transaction = new Transaction();
-
-                // Validar ID
-                if (!TryParseGuid(row["id"], out var parsedGuid))
-                {
-                    _logger.LogWarning($"Invalid GUID format for transaction ID: {row["id"]}");
-                    continue;
-                }
-                transaction.Id = parsedGuid;
-
-                // Asignar propiedades de la transacción
-                transaction.UserBankTransactionId = row["userBankTransactionId"]?.ToString() ?? string.Empty;
-                transaction.Tag = row["tag"]?.ToString() ?? string.Empty;
-                transaction.TransactionDate = ParseDate(row["transactionDate"]);
-                transaction.Status = ParseEnum<TransactionStatus>(row["status"], TransactionStatus.Pending);
-                transaction.SchemaVersion = row["schemaVersion"] != null ? (int)row["schemaVersion"] : 1;
-                transaction.BlockId = row["blockId"]?.ToString();
-
-                // Manejar el campo 'transactionDataSave'
-                if (row["transactionDataSave"] != null)
+                if (!string.IsNullOrEmpty(transaction.TransactionDataSave))
                 {
                     try
                     {
-                        transaction.TransactionDataSave = row["transactionDataSave"].ToString();
                         transaction.TransactionData = JsonDocument.Parse(transaction.TransactionDataSave).RootElement;
                     }
                     catch (JsonException ex)
                     {
-                        _logger.LogWarning($"Error parsing TransactionDataSave: {ex.Message}, setting TransactionData to null.");
+                        _logger.LogWarning($"Error parsing TransactionDataSave for transaction {transaction.Id}: {ex.Message}, setting TransactionData to null.");
                         transaction.TransactionData = null;
                     }
                 }
@@ -117,13 +102,13 @@ public class TransactionRepository : ITransactionRepository
                 transactions.Add(transaction);
             }
 
-            _logger.LogInformation($"All transactions retrieved from Couchbase.");
+            _logger.LogInformation("All transactions retrieved from MongoDB.");
 
             return ApiResponseHelper.CreateSuccessResponse(transactions, "Transactions retrieved successfully.");
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving transactions data from Couchbase: {ex.Message}");
+            _logger.LogError($"Error retrieving transactions data from MongoDB: {ex.Message}");
             return ApiResponseHelper.CreateErrorResponse<List<Transaction>>($"Failed to retrieve transactions data: {ex.Message}", 500);
         }
     }
