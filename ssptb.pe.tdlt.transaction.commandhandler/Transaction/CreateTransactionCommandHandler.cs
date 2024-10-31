@@ -101,6 +101,8 @@ public class CreateTransactionCommandHandler : IRequestHandler<CreateTransaction
             }
 
             _logger.LogInformation("Archivo JSON almacenado exitosamente en el servicio de almacenamiento.");
+            transaction.StorageUrl = storageResponse.Data.PublicUrl;
+            await _transactionRepository.SaveTransactionAsync(transaction);
 
             // Crear el DTO de respuesta
             var responseDto = new TransactionResponseDto

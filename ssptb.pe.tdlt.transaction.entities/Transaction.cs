@@ -14,5 +14,6 @@ public class Transaction
     public TransactionStatus Status { get; set; }
     public int SchemaVersion { get; set; }
     public string? BlockId { get; set; }
+    public string? StorageUrl { get; set; }
     // Otros campos necesarios...
 }

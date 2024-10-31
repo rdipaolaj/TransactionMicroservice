@@ -9,4 +9,5 @@ public class TransactionAllResponseDto
     public TransactionStatus Status { get; set; }
     public string? BlockId { get; set; }
     public string TransactionData { get; set; } = string.Empty;
+    public string StorageUrl { get; set; } = string.Empty;
 }
