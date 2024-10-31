@@ -4,4 +4,5 @@ namespace ssptb.pe.tdlt.transaction.secretsmanager.Services;
 public interface ISecretManagerService
 {
     Task<CouchBaseSecrets?> GetCouchBaseSecrets();
+    Task<MongoDbSecrets?> GetMongoDbSecrets();
 }

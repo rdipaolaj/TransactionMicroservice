@@ -4,6 +4,11 @@ using ssptb.pe.tdlt.transaction.infraestructure.Modules;
 using ssptb.pe.tdlt.transaction.data;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using HealthChecks.UI.Client;
+using MongoDB.Bson.Serialization.Serializers;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson;
+
+BsonSerializer.RegisterSerializer(typeof(Guid), new GuidSerializer(GuidRepresentation.Standard));
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +37,8 @@ builder.Services.AddDataServicesConfiguration();
 
 var app = builder.Build();
 
+app.Services.InitializeMongoDatabase();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -41,7 +48,7 @@ if (app.Environment.IsDevelopment())
 
 app.AddSecurityHeaders();
 app.UseCors("CorsPolicy");
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
 app.UseAuthorization();
 app.UseExceptionHandler();

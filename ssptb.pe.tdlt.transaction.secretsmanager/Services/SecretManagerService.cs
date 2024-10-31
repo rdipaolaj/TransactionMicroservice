@@ -25,6 +25,9 @@ internal class SecretManagerService : ISecretManagerService
     public async Task<CouchBaseSecrets?> GetCouchBaseSecrets()
         => await GetSecret<CouchBaseSecrets>(_settings.Value.ArnCouchBaseSecrets);
 
+    public async Task<MongoDbSecrets?> GetMongoDbSecrets()
+        => await GetSecret<MongoDbSecrets>(_settings.Value.ArnMongoDBSecrets);
+
     private async Task<T?> GetSecret<T>(string arn) where T : ISecret
     {
         T? result = default;

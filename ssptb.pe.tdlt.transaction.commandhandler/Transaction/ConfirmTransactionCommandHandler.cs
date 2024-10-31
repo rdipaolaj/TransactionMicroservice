@@ -22,9 +22,9 @@ public class ConfirmTransactionCommandHandler : IRequestHandler<ConfirmTransacti
         if (transaction == null)
             return false;
 
-        transaction.Status = TransactionStatus.Confirmed;
+        transaction.Data.Status = TransactionStatus.Confirmed;
 
-        await _transactionRepository.SaveTransactionAsync(transaction);
+        await _transactionRepository.SaveTransactionAsync(transaction.Data);
 
         return true;
     }

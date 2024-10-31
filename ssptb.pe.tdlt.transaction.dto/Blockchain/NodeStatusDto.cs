@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ssptb.pe.tdlt.transaction.dto.Blockchain;
+﻿namespace ssptb.pe.tdlt.transaction.dto.Blockchain;
 public class NodeStatusDto
 {
     public bool IsHealthy { get; set; }

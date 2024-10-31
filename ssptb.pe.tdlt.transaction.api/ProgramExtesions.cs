@@ -59,6 +59,7 @@ public static class ProgramExtesions
         var secretManagerService = (ISecretManagerService)serviceProvider.GetService(typeof(ISecretManagerService));
 
         CouchBaseSecrets secretsPostgres = secretManagerService.GetCouchBaseSecrets().GetAwaiter().GetResult();
+        MongoDbSecrets secretsMongoDb = secretManagerService.GetMongoDbSecrets().GetAwaiter().GetResult();
 
         services.Configure<CouchBaseSettings>(options =>
         {
@@ -66,6 +67,11 @@ public static class ProgramExtesions
             options.BucketName = secretsPostgres.BucketName;
             options.UserName = secretsPostgres.UserName;
             options.Password = secretsPostgres.Password;
+        });
+
+        services.Configure<MongoDbSettings>(options =>
+        {
+            options.ConnectionString = secretsMongoDb.ConnectionString;
         });
 
         return services;
@@ -121,7 +127,7 @@ public static class ProgramExtesions
     public static IServiceCollection AddDatabaseHealthCheck(this IServiceCollection services)
     {
         services.AddHealthChecks()
-            .AddCheck<CouchBaseHealthCheck>("CouchBase");
+            .AddCheck<MongoDBHealthCheck>("MongoDB");
 
         return services;
     }

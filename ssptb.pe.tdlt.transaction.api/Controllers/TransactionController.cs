@@ -37,7 +37,7 @@ public class TransactionController : CustomController
     {
         var command = new CreateTransactionCommand(request);
         var result = await _mediator.Send(command);
-        return Ok(result);
+        return OkorBadRequestValidationApiResponse(result);
     }
 
     [HttpGet]
@@ -46,9 +46,25 @@ public class TransactionController : CustomController
     {
         var query = new GetTransactionQuery(id);
         var result = await _mediator.Send(query);
-        if (result == null)
-            return NotFound();
-        return Ok(result);
+        return OkorBadRequestValidationApiResponse(result);
+    }
+
+    [HttpGet]
+    [Route("{id}/{roleId}")]
+    public async Task<IActionResult> GetTransactionsByIdAndRoleId(Guid id, Guid roleId)
+    {
+        var query = new GetTransactionsByIdAndRoleIdQuery(id, roleId);
+        var result = await _mediator.Send(query);
+        return OkorBadRequestValidationApiResponse(result);
+    }
+
+    [HttpGet]
+    [Route("all")]
+    public async Task<IActionResult> GetAllTransactions()
+    {
+        var query = new GetAllTransactionsQuery();
+        var result = await _mediator.Send(query);
+        return OkorBadRequestValidationApiResponse(result);
     }
 
     [HttpPost]

@@ -12,10 +12,11 @@ public static class MapsterConfiguration
         TypeAdapterConfig config = new();
 
         config.NewConfig<TransactionRequestDto, entities.Transaction>()
-            //.Map(dest => dest.Id, src => src.Id)
-            .Map(dest => dest.Amount, src => src.Amount)
-            .Map(dest => dest.Currency, src => src.Currency)
-            .Map(dest => dest.TransactionDate, src => src.TransactionDate)
+            .Map(dest => dest.Tag, src => src.Tag)
+            .Map(dest => dest.UserBankTransactionId, src => src.UserBankTransactionId)
+            .Map(dest => dest.TransactionData, src => src.TransactionData)
+            .Map(dest => dest.TransactionDataSave, src => src.TransactionData.GetRawText())
+            .Map(dest => dest.TransactionDate, src => DateTime.UtcNow)
             .Map(dest => dest.Status, src => TransactionStatus.SentToBlockchain);
 
         config.NewConfig<NodeInfoDto, NodeStatusDto>()

@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using ssptb.pe.tdlt.transaction.common.Enums;
 using ssptb.pe.tdlt.transaction.common.Exceptions;
 using ssptb.pe.tdlt.transaction.common.Extensions;
 
@@ -32,6 +33,7 @@ public class ValidatorBehavior<TRequest, TResponse>(
 
             throw new CustomException(
                 $"Command Validation Errors for type {typeof(TRequest).Name}",
+                ApiErrorCode.ValidationError,
                 new ValidationException("Validation exception", failures));
         }
 
