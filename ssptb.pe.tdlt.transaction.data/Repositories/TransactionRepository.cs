@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json.Linq;
 using ssptb.pe.tdlt.transaction.common.Responses;
@@ -111,6 +112,228 @@ public class TransactionRepository : ITransactionRepository
             _logger.LogError($"Error retrieving transactions data from MongoDB: {ex.Message}");
             return ApiResponseHelper.CreateErrorResponse<List<Transaction>>($"Failed to retrieve transactions data: {ex.Message}", 500);
         }
+    }
+
+    public async Task<int> GetTotalTransactionsAsync(Guid userId, Guid roleId)
+    {
+        var collection = _mongoDBHelper.GetCollection<Transaction>("transaction_data");
+
+        // Si el roleId es Guid.Empty, obtenemos todas las transacciones (usuario administrador)
+        FilterDefinition<Transaction> filter = roleId == Guid.Empty
+            ? Builders<Transaction>.Filter.Empty
+            : Builders<Transaction>.Filter.Eq(t => t.UserBankTransactionId, userId.ToString());
+
+        var totalTransactions = await collection.CountDocumentsAsync(filter);
+        _logger.LogInformation($"Total transactions calculated: {totalTransactions}");
+        return (int)totalTransactions;
+    }
+
+    public async Task<double> CalculateMonthlyPercentageChangeAsync(Guid userId, Guid roleId)
+    {
+        var collection = _mongoDBHelper.GetCollection<Transaction>("transaction_data");
+
+        // Filtrar las transacciones del usuario o todas si es Admin
+        FilterDefinition<Transaction> filter = roleId == Guid.Empty
+            ? Builders<Transaction>.Filter.Empty
+            : Builders<Transaction>.Filter.Eq(t => t.UserBankTransactionId, userId.ToString());
+
+        // Filtrar las transacciones de este mes y del mes pasado
+        var currentDate = DateTime.UtcNow;
+        var startOfCurrentMonth = new DateTime(currentDate.Year, currentDate.Month, 1);
+        var startOfLastMonth = startOfCurrentMonth.AddMonths(-1);
+
+        // Contar transacciones de este mes
+        var currentMonthFilter = Builders<Transaction>.Filter.And(
+            filter,
+            Builders<Transaction>.Filter.Gte(t => t.TransactionDate, startOfCurrentMonth)
+        );
+        var currentMonthCount = await collection.CountDocumentsAsync(currentMonthFilter);
+
+        // Contar transacciones del mes pasado
+        var lastMonthFilter = Builders<Transaction>.Filter.And(
+            filter,
+            Builders<Transaction>.Filter.Gte(t => t.TransactionDate, startOfLastMonth),
+            Builders<Transaction>.Filter.Lt(t => t.TransactionDate, startOfCurrentMonth)
+        );
+        var lastMonthCount = await collection.CountDocumentsAsync(lastMonthFilter);
+
+        // Calcular el cambio porcentual con lógica mejorada
+        double percentageChange;
+
+        if (lastMonthCount == 0 && currentMonthCount > 0)
+        {
+            // Incremento completo (sin transacciones el mes pasado, pero hay transacciones este mes)
+            percentageChange = 100;
+        }
+        else if (lastMonthCount > 0 && currentMonthCount == 0)
+        {
+            // Disminución completa (sin transacciones este mes, pero hubo el mes pasado)
+            percentageChange = -100;
+        }
+        else if (lastMonthCount == 0 && currentMonthCount == 0)
+        {
+            // Sin cambios (ambos meses sin transacciones)
+            percentageChange = 0;
+        }
+        else
+        {
+            // Cálculo normal
+            percentageChange = ((double)(currentMonthCount - lastMonthCount) / lastMonthCount) * 100;
+        }
+
+        _logger.LogInformation($"Monthly percentage change calculated: {percentageChange}%");
+        return percentageChange;
+    }
+
+    public async Task<Dictionary<int, int>> GetTransactionsPerHourAsync(Guid userId, Guid roleId, DateTime date)
+    {
+        var collection = _mongoDBHelper.GetCollection<Transaction>("transaction_data");
+
+        // Filtrar las transacciones del usuario o todas si es Admin
+        FilterDefinition<Transaction> filter = roleId == Guid.Empty
+            ? Builders<Transaction>.Filter.Empty
+            : Builders<Transaction>.Filter.Eq(t => t.UserBankTransactionId, userId.ToString());
+
+        // Filtrar solo las transacciones del día especificado
+        var startOfDay = date.Date;
+        var endOfDay = startOfDay.AddDays(1);
+
+        filter = Builders<Transaction>.Filter.And(
+            filter,
+            Builders<Transaction>.Filter.Gte(t => t.TransactionDate, startOfDay),
+            Builders<Transaction>.Filter.Lt(t => t.TransactionDate, endOfDay)
+        );
+
+        // Proyectar las horas y agrupar las transacciones por cada hora
+        var transactionsByHour = await collection.Aggregate()
+            .Match(filter)
+            .Group(new BsonDocument
+            {
+            { "_id", new BsonDocument("$hour", "$TransactionDate") },
+            { "count", new BsonDocument("$sum", 1) }
+            })
+            .ToListAsync();
+
+        // Convertir el resultado a un diccionario
+        var result = new Dictionary<int, int>();
+        foreach (var item in transactionsByHour)
+        {
+            var hour = item["_id"].AsInt32;
+            var count = item["count"].AsInt32;
+            result[hour] = count;
+        }
+
+        return result;
+    }
+
+    public async Task<List<KeyValuePair<DateTime, int>>> GetCumulativeTransactionTrendAsync(Guid userId, Guid roleId, DateTime startDate, DateTime endDate)
+    {
+        var collection = _mongoDBHelper.GetCollection<Transaction>("transaction_data");
+
+        FilterDefinition<Transaction> filter;
+
+        if (userId == Guid.Empty)
+        {
+            // Para el administrador, no aplicar filtro de usuario
+            filter = Builders<Transaction>.Filter.Empty;
+        }
+        else
+        {
+            // Filtrar por usuario específico si no es admin
+            filter = Builders<Transaction>.Filter.Eq(t => t.UserBankTransactionId, userId.ToString());
+        }
+
+        // Filtrar también por el rango de fechas
+        filter = Builders<Transaction>.Filter.And(
+            filter,
+            Builders<Transaction>.Filter.Gte(t => t.TransactionDate, startDate),
+            Builders<Transaction>.Filter.Lte(t => t.TransactionDate, endDate)
+        );
+
+        // Agregar y agrupar las transacciones por día
+        var transactionsByDay = await collection.Aggregate()
+            .Match(filter)
+            .Group(new BsonDocument
+            {
+            { "_id", new BsonDocument("$dateToString", new BsonDocument { { "format", "%Y-%m-%d" }, { "date", "$TransactionDate" } }) },
+            { "count", new BsonDocument("$sum", 1) }
+            })
+            .Sort(new BsonDocument("_id", 1))  // Ordenar por fecha
+            .ToListAsync();
+
+        // Convertir y acumular el resultado en una lista de pares clave-valor
+        var result = new List<KeyValuePair<DateTime, int>>();
+        int cumulativeTotal = 0;
+
+        foreach (var item in transactionsByDay)
+        {
+            var date = DateTime.Parse(item["_id"].AsString);
+            var count = item["count"].AsInt32;
+
+            cumulativeTotal += count;  // Sumar al total acumulativo
+            result.Add(new KeyValuePair<DateTime, int>(date, cumulativeTotal));
+        }
+
+        return result;
+    }
+
+    public async Task<(int successCount, int errorCount)> GetSuccessErrorCountAsync(Guid userId, Guid roleId)
+    {
+        var collection = _mongoDBHelper.GetCollection<Transaction>("transaction_data");
+
+        // Filtrar las transacciones del usuario o todas si es Admin
+        FilterDefinition<Transaction> filter;
+
+        if (userId == Guid.Empty)
+        {
+            filter = Builders<Transaction>.Filter.Empty;
+        }
+        else
+        {
+            filter = Builders<Transaction>.Filter.Eq(t => t.UserBankTransactionId, userId.ToString());
+        }
+
+        // Definir los filtros de éxito y error basados en el campo de estado
+        var successFilter = Builders<Transaction>.Filter.And(filter, Builders<Transaction>.Filter.Eq(t => t.Status, TransactionStatus.SentToBlockchain));
+        var errorFilter = Builders<Transaction>.Filter.And(filter, Builders<Transaction>.Filter.Eq(t => t.Status, TransactionStatus.Failed));
+
+        // Contar las transacciones exitosas y erróneas
+        var successCount = await collection.CountDocumentsAsync(successFilter);
+        var errorCount = await collection.CountDocumentsAsync(errorFilter);
+
+        return ((int)successCount, (int)errorCount);
+    }
+
+    public async Task<int> GetTransactionCountByMonthAsync(Guid userId, Guid roleId, DateTime referenceDate)
+    {
+        var collection = _mongoDBHelper.GetCollection<Transaction>("transaction_data");
+
+        // Filtrar las transacciones del usuario o todas si es Admin
+        FilterDefinition<Transaction> filter;
+
+        if (userId == Guid.Empty)
+        {
+            filter = Builders<Transaction>.Filter.Empty;
+        }
+        else
+        {
+            filter = Builders<Transaction>.Filter.Eq(t => t.UserBankTransactionId, userId.ToString());
+        }
+
+        // Definir el rango de fechas para el mes
+        var startOfMonth = new DateTime(referenceDate.Year, referenceDate.Month, 1);
+        var startOfNextMonth = startOfMonth.AddMonths(1);
+
+        // Agregar los filtros de rango de fechas
+        filter = Builders<Transaction>.Filter.And(
+            filter,
+            Builders<Transaction>.Filter.Gte(t => t.TransactionDate, startOfMonth),
+            Builders<Transaction>.Filter.Lt(t => t.TransactionDate, startOfNextMonth)
+        );
+
+        // Contar las transacciones en el rango
+        var transactionCount = await collection.CountDocumentsAsync(filter);
+        return (int)transactionCount;
     }
 
     // Métodos auxiliares

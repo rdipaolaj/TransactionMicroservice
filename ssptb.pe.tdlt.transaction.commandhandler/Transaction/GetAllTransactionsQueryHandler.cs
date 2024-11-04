@@ -38,7 +38,8 @@ public class GetAllTransactionsQueryHandler : IRequestHandler<GetAllTransactions
                 BlockId = transaction.BlockId,
                 TransactionData = transaction.TransactionData.HasValue && transaction.TransactionData.Value.ValueKind != JsonValueKind.Undefined
                     ? transaction.TransactionData.Value.GetRawText() // Convertir el JsonElement a string
-                    : string.Empty
+                    : string.Empty,
+                StorageUrl = transaction.StorageUrl ?? string.Empty
             };
 
             responseDto.Add(dto);
