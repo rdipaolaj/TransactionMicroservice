@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using ssptb.pe.tdlt.transaction.common.Helpers;
 using ssptb.pe.tdlt.transaction.common.Settings;
 using ssptb.pe.tdlt.transaction.data.Helpers;
 using ssptb.pe.tdlt.transaction.data.Repositories;
@@ -14,6 +15,11 @@ public static class DataConfiguration
     {
         var serviceProvider = services.BuildServiceProvider();
         var mongoDbSettings = serviceProvider.GetService<IOptions<MongoDbSettings>>()?.Value;
+
+        if (EnvironmentHelper.IsDevelopment())
+        {
+            mongoDbSettings.ConnectionString = "mongodb://localhost:27017";
+        }
 
         if (mongoDbSettings == null)
         {

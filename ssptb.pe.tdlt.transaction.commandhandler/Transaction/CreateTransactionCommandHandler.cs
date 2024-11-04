@@ -97,6 +97,11 @@ public class CreateTransactionCommandHandler : IRequestHandler<CreateTransaction
             if (!storageResponse.Success)
             {
                 _logger.LogError("Error al almacenar el JSON en el servicio de almacenamiento.");
+
+                // Marcar como fallido y actualizar en la base de datos
+                transaction.Status = TransactionStatus.Failed;
+                await _transactionRepository.SaveTransactionAsync(transaction);
+
                 return ApiResponseHelper.CreateErrorResponse<TransactionResponseDto>("Error al almacenar el JSON en el servicio de almacenamiento.", 500);
             }
 
