@@ -75,6 +75,41 @@ internal class BlockchainService : IBlockchainService
         return apiResult;
     }
 
+    public async Task<ApiResponse<TransactionBlockDto>> GetTransactionByBlockIdAsync(string blockId)
+    {
+        using HttpClient httpClient = _httpClientFactory.CreateClient("CustomClient");
+        string path = GetTransactionByBlockIdPath(blockId);
+        httpClient.BaseAddress = new Uri(_settings.Value.UrlMsBlockchain);
+
+        HttpResponseMessage httpResponse = await _baseService.GetAsync(httpClient, path);
+
+        if (!CommonHttpValidation.ValidHttpResponse(httpResponse))
+        {
+            var errorContent = await httpResponse.Content.ReadAsStringAsync();
+            _logger.LogError("Error al obtener la transacción por BlockId en Blockchain Service");
+            _logger.LogError("Respuesta HTTP inválida: {StatusCode}, Contenido: {Content}", httpResponse.StatusCode, errorContent);
+            return ApiResponseHelper.CreateErrorResponse<TransactionBlockDto>("Error al obtener la transacción por BlockId en Blockchain Service");
+        }
+
+        // Leer la respuesta como JSON
+        var apiResult = await httpResponse.Content.ReadFromJsonAsync<ApiResponse<TransactionBlockDto>>();
+        if (apiResult == null)
+        {
+            _logger.LogError("No se pudo deserializar la respuesta de la API Blockchain.");
+            return ApiResponseHelper.CreateErrorResponse<TransactionBlockDto>("No se pudo procesar la respuesta del servicio Blockchain.");
+        }
+
+        // Verificar si la API retornó éxito
+        if (!apiResult.Success)
+        {
+            _logger.LogError("La API Blockchain devolvió un error: {Message}", apiResult.Message);
+            return ApiResponseHelper.CreateErrorResponse<TransactionBlockDto>(apiResult.Message, apiResult.StatusCode, apiResult.Errors);
+        }
+
+        _logger.LogInformation("Transacción recuperada exitosamente para BlockId: {BlockId}", blockId);
+        return apiResult;
+    }
+
     #region Private methods
 
     private static string GetRegisterTransactionPath()
@@ -85,6 +120,11 @@ internal class BlockchainService : IBlockchainService
     private static string GetNodeInfoPath()
     {
         return "blockchain/node-info";
+    }
+
+    private static string GetTransactionByBlockIdPath(string blockId)
+    {
+        return $"blockchain/retrieve-transaction?blockId={blockId}";
     }
 
     #endregion

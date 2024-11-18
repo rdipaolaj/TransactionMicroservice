@@ -10,6 +10,7 @@ public interface ITransactionRepository
     Task<ApiResponse<List<Transaction>>> GetAllTransactionsAsync();
 
     Task<int> GetTotalTransactionsAsync(Guid userId, Guid roleId);
+    Task<List<Transaction>> GetTransactionsAsync(Guid userId, Guid roleId);
     Task<double> CalculateMonthlyPercentageChangeAsync(Guid userId, Guid roleId);
     Task<Dictionary<int, int>> GetTransactionsPerHourAsync(Guid userId, Guid roleId, DateTime date);
     Task<List<KeyValuePair<DateTime, int>>> GetCumulativeTransactionTrendAsync(Guid userId, Guid roleId, DateTime startDate, DateTime endDate);
