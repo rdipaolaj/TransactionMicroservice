@@ -7,5 +7,6 @@ public interface IBlockchainService
 {
     Task<ApiResponse<RegisterTransactionDto>> RegisterTransactionAsync(Transaction transaction);
     Task<ApiResponse<NodeInfoDto>> GetNodeInfoAsync();
+    Task<ApiResponse<TransactionBlockDto>> GetTransactionByBlockIdAsync(string blockId);
     // Otros métodos si los necesitas...
 }

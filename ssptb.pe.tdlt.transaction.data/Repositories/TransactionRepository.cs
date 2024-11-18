@@ -128,6 +128,20 @@ public class TransactionRepository : ITransactionRepository
         return (int)totalTransactions;
     }
 
+    public async Task<List<Transaction>> GetTransactionsAsync(Guid userId, Guid roleId)
+    {
+        var collection = _mongoDBHelper.GetCollection<Transaction>("transaction_data");
+
+        // Si el roleId es Guid.Empty, obtenemos todas las transacciones (usuario administrador)
+        FilterDefinition<Transaction> filter = roleId == Guid.Empty
+            ? Builders<Transaction>.Filter.Empty
+            : Builders<Transaction>.Filter.Eq(t => t.UserBankTransactionId, userId.ToString());
+
+        var transactions = await collection.Find(filter).ToListAsync();
+        _logger.LogInformation($"Total transactions retrieved: {transactions.Count}");
+        return transactions;
+    }
+
     public async Task<double> CalculateMonthlyPercentageChangeAsync(Guid userId, Guid roleId)
     {
         var collection = _mongoDBHelper.GetCollection<Transaction>("transaction_data");
