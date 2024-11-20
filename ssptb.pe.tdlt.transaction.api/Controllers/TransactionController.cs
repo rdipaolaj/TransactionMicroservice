@@ -40,6 +40,15 @@ public class TransactionController : CustomController
         return OkorBadRequestValidationApiResponse(result);
     }
 
+    [HttpPost]
+    [Route("create-test")]
+    public async Task<IActionResult> CreateTransactionTest([FromBody] TransactionTestRequestDto request)
+    {
+        var command = new CreateTransactionTestCommand(request);
+        var result = await _mediator.Send(command);
+        return OkorBadRequestValidationApiResponse(result);
+    }
+
     [HttpGet]
     [Route("{id}")]
     public async Task<IActionResult> GetTransaction(Guid id)

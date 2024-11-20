@@ -55,6 +55,28 @@ internal class BlockchainService : IBlockchainService
         return apiResult;
     }
 
+    public async Task<ApiResponse<RegisterTransactionDto>> RegisterTransactionTestAsync(Transaction transaction)
+    {
+        using HttpClient httpClient = _httpClientFactory.CreateClient("CustomClient");
+        string path = GetRegisterTransactionTestPath();
+
+        httpClient.BaseAddress = new Uri(_settings.Value.UrlMsBlockchain);
+
+        HttpResponseMessage httpResponse = await _baseService.PostAsJsonAsync(httpClient, path, transaction);
+
+        if (!CommonHttpValidation.ValidHttpResponse(httpResponse))
+        {
+            var errorContent = await httpResponse.Content.ReadAsStringAsync();
+            _logger.LogError("Error al registrar la transacción TEST en Blockchain Service");
+            _logger.LogError("Respuesta HTTP inválida: {StatusCode}, Contenido: {Content}", httpResponse.StatusCode, errorContent);
+            return ApiResponseHelper.CreateErrorResponse<RegisterTransactionDto>("Error al registrar la transacción TEST en Blockchain Service");
+        }
+
+        var apiResult = await httpResponse.Content.ReadFromJsonAsync<ApiResponse<RegisterTransactionDto>>();
+
+        return apiResult;
+    }
+
     public async Task<ApiResponse<NodeInfoDto>> GetNodeInfoAsync()
     {
         using HttpClient httpClient = _httpClientFactory.CreateClient("CustomClient");
@@ -115,6 +137,11 @@ internal class BlockchainService : IBlockchainService
     private static string GetRegisterTransactionPath()
     {
         return "blockchain/register-transaction";
+    }
+
+    private static string GetRegisterTransactionTestPath()
+    {
+        return "blockchain/register-test-transaction";
     }
 
     private static string GetNodeInfoPath()
