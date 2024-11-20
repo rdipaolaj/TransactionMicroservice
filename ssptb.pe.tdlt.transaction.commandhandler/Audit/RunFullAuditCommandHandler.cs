@@ -4,6 +4,7 @@ using ssptb.pe.tdlt.transaction.command.Audit.Command;
 using ssptb.pe.tdlt.transaction.common.Responses;
 using ssptb.pe.tdlt.transaction.data.Repositories;
 using ssptb.pe.tdlt.transaction.dto.Audit;
+using ssptb.pe.tdlt.transaction.entities.Enums;
 using ssptb.pe.tdlt.transaction.internalservices.Blockchain;
 using ssptb.pe.tdlt.transaction.internalservices.Helpers;
 using ssptb.pe.tdlt.transaction.internalservices.Storage;
@@ -40,6 +41,13 @@ public class RunFullAuditCommandHandler : IRequestHandler<RunFullAuditCommand, A
         {
             try
             {
+                if (transaction.Status == TransactionStatus.SentToBlockchain)
+                {
+                    // Si la transacción está en SentToBlockchain y no tiene errores, la ignoramos
+                    _logger.LogInformation($"Transacción {transaction.Id} está en estado SentToBlockchain, no se considera discrepancia.");
+                    continue;
+                }
+
                 var tangleResponse = await _blockchainService.GetTransactionByBlockIdAsync(transaction.BlockId);
 
                 if (tangleResponse == null || !tangleResponse.Success)
